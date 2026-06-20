@@ -460,11 +460,12 @@ async function sendToPrinter(zpl){
    5. Utskrift / nedladdning / historik
    ============================================================ */
 const HKEY='label_history';
-function loadHist(){ try{return JSON.parse(localStorage.getItem(HKEY))||[]}catch{return[]} }
+const HIST_TTL=3*24*60*60*1000;
+function loadHist(){ try{const h=JSON.parse(localStorage.getItem(HKEY))||[]; return h.filter(e=>e.ts&&Date.now()-e.ts<HIST_TTL);}catch{return[]} }
 function saveHist(h){ localStorage.setItem(HKEY, JSON.stringify(h.slice(0,20))); }
 function addHist(d){
   const h=loadHist();
-  h.unshift({t:new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
+  h.unshift({ts:Date.now(),t:new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
     kund:d.kund, order:d.order, content:d.content, antal:d.antal, copies:d.copies, dpi:d.dpi});
   saveHist(h); renderHist();
 }
