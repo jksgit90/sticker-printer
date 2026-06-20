@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Etikettutskrift — 100×50 mm</title>
+<style>
+  :root{
+    --bg:#eef1f6; --panel:#ffffff; --panel2:#f4f6fa; --line:#d3dae4;
+    --field:#8ea3ba; --txt:#0f172a; --muted:#475569; --accent:#1d4ed8;
+    --accent-press:#1742a8; --accent2:#15803d; --danger:#dc2626; --radius:12px; --hdr:56px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--txt)}
+  header{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;
+    align-items:center;gap:12px;background:var(--panel);position:sticky;top:0;z-index:50}
+  .col-left{position:sticky;top:var(--hdr);align-self:start;
+    max-height:calc(100vh - var(--hdr) - 28px);overflow:auto}
+  header h1{font-size:17px;margin:0;font-weight:700;color:var(--txt)}
+  header .pill{font-size:12px;color:var(--muted);border:1px solid var(--line);
+    padding:3px 8px;border-radius:999px}
+  #status{margin-left:auto;font-size:13px;display:flex;align-items:center;gap:6px;color:var(--muted)}
+  #status .dot{width:10px;height:10px;border-radius:50%;background:#94a3b8}
+  #status.ok .dot{background:var(--accent2)} #status.err .dot{background:var(--danger)}
+  #status.ok{color:var(--accent2)} #status.err{color:var(--danger)}
+  main{display:grid;grid-template-columns:420px 1fr;gap:20px;padding:20px;max-width:1200px;margin:0 auto}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .panel h2{margin:0 0 6px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  .lead{margin:0 0 20px;font-size:14px;color:var(--muted)}
+  .lead strong{color:var(--txt)}
+  .field{display:block;margin:0 0 18px}
+  .field .lbl{display:flex;align-items:center;gap:9px;margin-bottom:8px;font-size:16px;font-weight:600;color:#1f2937}
+  .field .step{flex:none;width:27px;height:27px;border-radius:50%;background:var(--accent);color:#fff;
+    font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  label.s{display:block;margin:0 0 14px;font-size:14px;font-weight:600;color:#334155}
+  label.s span{display:block;margin-bottom:6px}
+  input,select{width:100%;padding:14px;background:#fff;border:2px solid var(--field);
+    border-radius:10px;color:var(--txt);font-size:18px}
+  input::placeholder{color:#94a3b8;font-weight:400}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  button{padding:12px;border:0;border-radius:10px;font-size:14px;font-weight:600;
+    cursor:pointer;color:#fff;background:var(--accent)}
+  button.primary{width:100%;padding:18px;font-size:20px;font-weight:700;margin-top:4px}
+  button.primary:hover{background:var(--accent-press);filter:none}
+  .downloads{display:flex;gap:10px;margin-top:10px}
+  .downloads button{flex:1}
+  .copies-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0 16px}
+  .copies-row label{margin:0;font-size:17px;font-weight:600;color:#1f2937}
+  .stepper{display:flex;align-items:stretch}
+  .stepper button{width:54px;height:56px;font-size:28px;line-height:1;padding:0;color:var(--txt);
+    background:#fff;border:2px solid var(--field)}
+  .stepper button:first-child{border-radius:10px 0 0 10px}
+  .stepper button:last-child{border-radius:0 10px 10px 0}
+  .stepper input{width:72px;height:56px;text-align:center;font-size:22px;font-weight:700;
+    border-radius:0;border-left:0;border-right:0}
+  .stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+  button.ghost{background:#fff;border:1.5px solid var(--field);color:var(--txt)}
+  button:hover{filter:brightness(1.05)} button:active{transform:translateY(1px)}
+  button,input,select,summary{transition:filter .15s,border-color .15s,box-shadow .15s,background .15s}
+  button:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(29,78,216,.4)}
+  input:focus-visible,select:focus-visible,summary:focus-visible{box-shadow:0 0 0 4px rgba(29,78,216,.28)}
+  input.invalid{border-color:var(--danger);box-shadow:0 0 0 3px rgba(220,38,38,.2)}
+  .req{color:var(--danger);margin-left:1px}
+  button#printBtn:disabled{opacity:.55;cursor:default}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  details.adv{margin-top:20px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  details.adv>summary{font-size:15px;font-weight:600;color:var(--txt);padding:14px 16px}
+  .adv-body{padding:16px;border-top:1px solid var(--line)}
+  details.adv2{margin-top:12px;background:var(--panel2)}
+  .preview-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .ruler{font-size:12px;color:var(--muted)}
+  /* 100×50 mm @ 5 px/mm = 500×250 */
+  .label{background:#fff;color:#111;width:500px;height:250px;border-radius:6px;position:relative;
+    border:1px solid #cbd5e1;box-shadow:0 6px 20px rgba(15,23,42,.13);overflow:hidden;font-family:Arial,Helvetica,sans-serif}
+  .label img.logo{position:absolute;width:auto}
+  .label .cap{position:absolute;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:#555}
+  .label .val{position:absolute;font-weight:800;color:#111;line-height:1.05}
+  details{margin-top:16px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  summary{cursor:pointer;padding:11px 14px;font-size:13px;color:var(--muted)}
+  pre.zpl{margin:0;padding:12px;font:12px/1.4 monospace;color:#334155;white-space:pre-wrap;
+    border-top:1px solid var(--line);max-height:200px;overflow:auto;background:var(--panel2)}
+  .history{margin-top:20px}
+  .history table{width:100%;border-collapse:collapse;font-size:13px}
+  .history th,.history td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}
+  .history th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+  .history .reprint{background:#fff;border:1.5px solid var(--field);color:var(--txt);
+    padding:6px 12px;font-size:12px;border-radius:6px;flex:none;min-width:0;font-weight:600}
+  .history .empty{color:var(--muted);padding:14px 8px}
+  @media(max-width:820px){main{grid-template-columns:1fr}
+    .col-left{position:static;max-height:none;overflow:visible}}
+  /* Kompakt läge för låga skärmar (t.ex. MacBook Air 2012, 768/900 px höjd)
+     så att hela vänsterkolumnen får plats utan intern scroll. */
+  @media(max-height:900px){
+    main{padding:14px;gap:16px}
+    .panel{padding:14px}
+    .panel h2{margin:0 0 4px}
+    .lead{margin:0 0 12px;font-size:13px}
+    .field{margin:0 0 8px}
+    .field .lbl{font-size:15px;margin-bottom:4px}
+    .field .step{width:23px;height:23px;font-size:13px}
+    input,select{padding:9px 12px;font-size:16px}
+    .copies-row{margin:8px 0 10px}
+    .copies-row label{font-size:16px}
+    .stepper button{width:46px;height:44px;font-size:24px}
+    .stepper input{width:62px;height:44px;font-size:19px}
+    button.primary{padding:13px;font-size:18px;margin-top:2px}
+    .downloads{margin-top:8px}
+    .downloads button{padding:10px}
+    details.adv{margin-top:12px}
+    details.adv>summary{padding:11px 14px;font-size:14px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Etikettutskrift</h1>
+  <span class="pill">100 × 50 mm</span>
+  <div id="status"><span class="dot"></span><span id="statusText">Söker skrivare…</span></div>
+</header>
+
+<main>
+  <!-- VÄNSTER: formulär -->
+  <section class="panel col-left">
+   <form id="lblForm" novalidate>
+    <h2>Ny etikett</h2>
+    <p class="lead">Fyll i fälten <strong>1–4</strong> och tryck på <strong>Skriv ut</strong>. Fält med <span class="req">*</span> måste fyllas i.</p>
+    <label class="field">
+      <span class="lbl"><span class="step">1</span>Kund <span class="req">*</span></span>
+      <input id="kund" required placeholder="t.ex. Acme AB" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="lbl"><span class="step">2</span>Ordernummer <span class="req">*</span></span>
+      <input id="order" required placeholder="t.ex. 12345" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="lbl"><span class="step">3</span>Innehåll / Märkning</span>
+      <input id="content" placeholder="t.ex. Widget Pro 240" autocomplete="off">
+    </label>
+    <label class="field">
+      <span class="lbl"><span class="step">4</span>Antal</span>
+      <input id="antal" inputmode="numeric" placeholder="t.ex. 24" autocomplete="off">
+    </label>
+
+    <div class="copies-row">
+      <label for="copies">Antal kopior</label>
+      <div class="stepper">
+        <button type="button" id="copyMinus" aria-label="Minska antal">−</button>
+        <input id="copies" type="number" value="1" min="1" inputmode="numeric">
+        <button type="button" id="copyPlus" aria-label="Öka antal">+</button>
+      </div>
+    </div>
+    <button id="printBtn" type="submit" class="primary">Skriv ut</button>
+    <div class="downloads">
+      <button id="pdfBtn" type="button" class="ghost" title="Spara 100×50 mm PDF">Ladda ner PDF</button>
+    </div>
+
+    <details class="adv">
+      <summary>Inställningar</summary>
+      <div class="adv-body">
+        <label class="s"><span>Upplösning</span>
+          <select id="dpi">
+            <option value="203">203 dpi (8 d/mm)</option>
+            <option value="300">300 dpi (12 d/mm)</option>
+          </select></label>
+        <label class="s"><span>Skrivare (Browser Print)</span>
+          <select id="device"><option>— söker —</option></select></label>
+        <details class="adv2">
+          <summary>Visa genererad ZPL</summary>
+          <pre class="zpl" id="zplOut"></pre>
+        </details>
+      </div>
+    </details>
+   </form>
+  </section>
+
+  <!-- HÖGER: förhandsvisning + historik -->
+  <section>
+    <div class="panel preview-wrap">
+      <h2 style="align-self:flex-start">Förhandsvisning</h2>
+      <div class="ruler">↔ 100 mm &nbsp;·&nbsp; 50 mm ↕</div>
+      <div class="label" id="label">
+        <img class="logo" id="pvLogo" alt="" style="display:none">
+      </div>
+    </div>
+
+    <div class="panel history">
+      <h2>Senaste utskrifter <span style="float:right"><button id="clearHist" class="reprint">Rensa</button></span></h2>
+      <table>
+        <thead><tr><th>Tid</th><th>Kund</th><th>Order</th><th>Märkning</th><th>Antal</th><th></th></tr></thead>
+        <tbody id="histBody"><tr><td colspan="6" class="empty">Inga utskrifter än.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[\^~]/g,' ');
+
+/* Label layout (mm, top-left origin of the 100×50 label).
+   Kund + Märkning span full width with no caption; Order + Antal are smaller
+   with captions; the logo is small in the bottom-right corner. */
+const LBL = {
+  capH:2.4,
+  logo:{x:70.5, top:41.5, h:5},
+  fields:{
+    kund:    {x:4,  w:92, cap:null, val:4,  h:7.5, lines:1, fit:true},
+    content: {x:4,  w:92, cap:null, val:16, h:5,   lines:2, step:5.6},
+    order:   {x:4,  w:46, cap:31,   val:34, h:6,   lines:1, fit:true},
+    antal:   {x:52, w:30, cap:31,   val:34, h:6,   lines:1, fit:true},
+  }
+};
+const CAPS = {order:'Ordernummer', antal:'Antal'};
+const ORDER = ['kund','content','order','antal'];
+/* shrink an em-size (mm) until text fits maxW (rough Helvetica-Bold metric) */
+function fitMM(text, maxWmm, baseH){
+  let h=baseH; const t=''+text;
+  while(h>3.5 && t.length*h*0.6 > maxWmm) h-=0.3;
+  return Math.round(h*10)/10;
+}
+function wrapLines(text, maxWmm, emMm, maxLines){
+  const words=(''+text).split(/\s+/).filter(Boolean), lines=[]; let cur='';
+  const maxChars=Math.max(1, Math.floor(maxWmm/(emMm*0.6)));
+  const fits=s=> s.length<=maxChars;
+  for(const w of words){ const t=cur?cur+' '+w:w;
+    if(fits(t)||!cur){ cur=t; } else { lines.push(cur); cur=w; } }
+  if(cur) lines.push(cur);
+  if(lines.length>maxLines){ lines[maxLines-1]=lines.slice(maxLines-1).join(' '); lines.length=maxLines; }
+  return lines.map(l=> l.length>maxChars ? l.slice(0,maxChars-1).trimEnd()+'…' : l);
+}
+
+/* ============================================================
+   1. Logo — chosen once, stored locally, used as fixed element
+   ============================================================ */
+/* Inbyggd InknArt-logga (sekundär, svart). Rastreras till JPEG vid behov. */
+const DEFAULT_ASPECT = 2834.6/557.1;
+const DEFAULT_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="2834.6" height="557.1" viewBox="0 0 2834.6 557.1"><defs><style>.st0{fill:#060707;}</style></defs><path class="st0" d="M561.9,224.7h0c-2.9-18.1-3.7-38-3.4-56.5,0-6.8,4.5-16.1,1.1-21.7-7.8-13.1-37.7-5.1-49.8-5.1h-36.4c-9.9,0-21.2-3.9-24.7,8.1-1.5,5-.2,12.4-.2,17.6,0,17,.6,33.2,2.4,49.8,2,19.2-4.6,39.7-4.8,59-.2,19.2,3.7,38.4,3.3,57.6-.4,18.6-.9,37.4-.9,56.1,0-4.9-9.4-15.5-11.8-19.6-23.8-40.4-45.5-82.1-64.8-124.9-12.4-27.5-23.6-55.5-33-84.1-2-6.3-2.9-14.3-8-18.2-4.6-3.5-13.9-3.6-19.4-3.9-14.4-.7-28.8,2.1-43.2,2.2-14.9,0-29.9.4-44.8.2-5.7,0-14.4-2.4-18.5,2.5-8.8,10.7,1,36.6,2.1,48.7.8,7.9.3,16-.5,24.1l.9,1.7-1,.9h-.2c-1.9,17.5-5.1,35.3-2.1,51.8,4.1,22.6,2.6,43.5,2.6,66.7s1.6,30.7-1.2,45.3c-1.7,9-6.3,17-8,26-2.9,15.5.6,33,2,48.6,1.7,19.1,3.5,38.2,4.8,57.3.7,10.7-3.1,30.7,8.6,36.7,9.4,4.8,29.4.9,39.8.9h30.3c6.6,0,13.2,0,19.8,0,3.1,0,5.4.5,7.7-1.9,5.7-5.8,3.1-20.6,3.1-28.6v-169.6c0-1.3.6-4.1,0-5.2,21.3,43.3,46.6,84.6,73.3,124.8,10.7,16.1,21.6,32.1,32.8,47.8,14.8,20.8,21.7,32.7,48.8,32.7h50.7c9,0,28.5,3.9,36.8,0,9.3-4.3-2.1-36.3-2-46.5,0-8.6,1.1-17.1,1.1-25.7,0-29.2-1-59.8,3.8-88.7,3.6-22.1,4.7-41.6,4.7-64.1s1.5-35.7,2.5-53.5c1-17.6-1.5-32-4.2-49.2Z"/><path class="st0" d="M130.9,432.2h0c-.9-14.8-7-28.2-7.7-43.5-.5-11.2-.9-22.3-1.6-33.5-1.5-24.4,4.5-49.1,4.5-73.7v-96.5c0-10,1-20.5,0-30.5-2.2-21.5-41.6-13.2-57.5-13.2s-26.9-2.3-38.8.3c-4.2.9-7.2,2.5-9.2,4.5-5.3,5.3-4.6,13.8-4.6,22.8v35.1c0,56.7,2.8,112.8,4.8,169.6.6,16-3.7,30-6,45.4-.9,5.8.2,13.1.2,18.8,0,14.1.5,28.1.4,42.2,0,18-2.7,37.5-.4,55.3,2.5,18.3,11.4,17.1,27.4,17.1h50c13.1,0,32.4,4.5,34-12.4,1.8-20.3,0-40.6,1.8-60.9,1.5-15.4,3.6-31.5,2.6-47Z"/><path class="st0" d="M981,450.2c2-21.6-2.3-42.6-2.3-63.8,0-39-28.2-68.9-67.8-65.3-28.7,2.6-53.9,17.2-83.4,18.5,1.8,0,7.6-9.9,8.6-11.3,5.4-7.1,9.6-15.4,15.1-22.1,5.7-7,14.2-11.1,20.7-17.3,10.6-10.2,18.2-22.7,28.2-33.3,12-12.8,22.4-22.7,27.6-39.8,4.9-16.3,14.5-25.9,24.6-39.1,4.4-5.7,22.7-22.4,22.7-28.4-.2-16.6-55.3-7.6-65.9-7.6s-31.2-3.5-43.2.9c-9.4,3.4-20,14.6-28.6,24.2h4c0,0-1.5.5-1.5.5h-3c-2.6,2.8-5,5.6-7.1,7.9-12.8,14-17.4,34.4-29.3,49.4-9.2,11.7-22.2,19.9-31.9,31.1-9.2,10.5-13.6,23.1-22.3,34.3,4-5.1,0-29.3,0-35.5,0-18.3,4.5-34.8,5.7-52.8,1.1-15.9-3.7-29.8-5.7-45-1.5-11.7-5.9-14.3-18.1-17.1-23.3-5.3-47.9,1-71.3,2.3-32.8,1.8-21.9,52.2-16.8,71.8,4,15.5,1.6,34.6,2.4,50.8,1.7,33.2-10.2,65.7-10.2,98.8,0,33.6,1.1,67.2,2.1,100.9.6,20.8-11.7,84.6,14,88.9,16.2,2.7,34.4.4,50.8.2,11.2-.1,38.1,6.4,46.7-2.7,6.4-6.9.4-33.1.4-42.5,0-24.7,5.9-53.8,0-77.8,7.7,1.3,14.4,5.4,22.1,6.7,20.7,3.5,42.2,3,63,.7,10.4-1.2,20.7-4.5,31-5.3,7-.6,14,1.7,20.4-2.1-.6,36.1-6.9,74.4,0,110.2,2,10.6,2.6,12.3,12.8,13.7,11.1,1.5,23.9-.3,35.2-.3s48,6.9,50.4-12.7c1-8.1-2.3-19.7-2.3-28.4s3.1-17.9,3.3-27.4h0c.2-11.2-2-22.6-1-33.8Z"/><path class="st0" d="M1157.1,60.7h0c-4.5-8.2-8.5-15.7-11.1-24.7-2.1-7.4-5.4-13.8-10.2-19.8-5.9-7.3-14.9-17.2-25-11.9-10.7,5.6-21,11.6-31.7,17.2-7.7,4-15,9.1-9.2,19,2.2,3.8,5.8,6,8.9,9,3.9,3.9,7.1,8.1,10.4,12.5,4.9,6.5,8.6,13.4,12.5,20.6,6.2,11.4,4.3,22,6.2,34.4.5,3,1.1,7.8,2.4,12.3,1.7,6.2,4.6,11.9,9.8,12.2,4,.2,8.4-1.7,12.2-2.6,4.9-1.1,10.3-1.6,15.1-3.4,9.9-3.6,15.7-10.7,18.6-20.8,5.9-20,.6-36.1-9-54Z"/><path class="st0" d="M1751.3,51.1h0c-8.4-8.6-16.4-17.6-24.8-26.2-8-8.2-19.7-1.5-27.5,3.6-6.5,4.2-11.5,9.3-15.8,15.7-5.3,7.7-11.4,13.7-18.2,20.1-14.7,14-24.7,27.7-25.2,48.6-.3,10.5,3,19.1,11.3,25.5,4,3.1,8.9,5.3,13.3,7.9,3.4,2,7,5.2,10.8,6.2,5,1.4,9.5-3.2,13.1-8.5,2.6-3.9,4.7-8.3,6.1-11,5.6-11.1,7.2-21.8,16.5-30.8,5.9-5.6,11.6-11,18.3-15.7,4.5-3.1,8.8-6.3,13.8-8.7,3.9-1.9,8-2.9,11.3-5.8,8.6-7.6,3.2-14.7-2.9-20.9Z"/><path class="st0" d="M1568.9,435.5h0c0-14.3,3.4-27,3.4-40.5,0-13.4-2.7-26.8-4.7-40.1-5.4-36.7-9-72.7-4-109.7,3.3-24.8,5.2-48.6,6-73.5.2-7.2,4.8-20.5-.3-26.6-6.5-7.6-24.6-3.9-33.4-4-18.6-.2-37.2-.5-55.7.3-31.3,1.3-20.5,43.7-20.5,65.5v182.8c-7.8-12.3-13.9-26.5-22.6-38.2-7-9.4-10.1-18.2-15.8-28.4-6.1-10.9-15.6-19.6-21.5-31-9.1-17.4-13.8-38-20-56.7-6.3-19.1-16.1-36.4-21.8-55.6-4.2-14.2-9.8-34.5-26.1-39-16.8-4.6-34.6.1-51.6.2-15.1,0-30.3-.4-45.4,0-17.9.5-21.3,13.6-18.9,29.1,3.3,21.2-.2,42.8-1.3,64.3-1.7,34.6,6.8,67.9,6.8,102.6,0,38,0,76,0,114,0,30-13.7,59-6,89.1,4.6,18,17.1,12.5,32,12.5s36.1,3.3,54.2.7c17.1-2.4,22.1-11.9,23.2-27.8,1.6-21.4,5.2-44.2,3.1-65.7-.8-7.7-1.1-15.2-2.1-22.8-3.3-25.1-.9-52.8-.9-78.1s1.3-9,0-11.5c8.9,18.2,17.7,36.3,25.8,54.4,5.7,12.7,17.6,24,25.9,35.2,5.9,7.8,8.4,17.4,12.4,26.2,4.1,8.8,9.1,12.4,15.2,19.1,14.4,15.7,21.5,36.7,37.6,51.8,7.1,6.7,16.4,15.6,26.1,17.9,14.1,3.5,31.9.6,46.4.6s26.9,1.6,39.6,0c25.3-2.5,14.8-61.9,14.8-78.2v-38.9Z"/><path class="st0" d="M2144.2,535c-2.9-20.6-11-42.9-21.4-60.9-9.1-15.8-19.7-33.4-21.1-52.1-1.8-23.1-12.6-40.3-19.4-61.9-9.2-29.3-23.3-55.3-33.3-83.9-6.4-18.3-14.1-36-18.4-54.9-4.4-19.3-11.7-37-18.3-55.5-7.6-21.2-25.8-31.8-47.6-30.6-21.6,1.2-55.4-7-73.9,5.9-18.6,12.9-23.7,40.5-29,60.9-6.8,26.5-10.3,54.7-20.4,80.3-5.8,14.8-11.9,32.2-19.9,46.5-5.2,9.4-11.6,15.4-15.2,25.8-5.4,15.3-6.6,33.2-13.9,47.7-5.3,10.6-12.4,20.3-17.6,31.1-4.2,8.5-10.2,19.8-12.3,28.9-2.2,9.8.4,18.3-2.8,27.8-3.5,10.5-7.6,21.1-12.3,31.1-14.7,30.9,22.9,26.6,44.1,26.6s32.5,4.8,48,.8c22.3-5.9,19.7-31,27.5-47.4,7.5-15.5,28.9-22.8,43.5-29.1,20-8.7,34.2-9.9,56.1-3.8,12.7,3.5,27.9,8.5,37.1,18.3,14.7,15.7,16.9,43.8,33.4,57.1,9.9,7.9,28.1,4.1,40.3,4.1s26.2,1.2,39.3.7c6.8-.2,15.2.2,21.6-2.2,9.5-3.5,7.1-2.9,5.9-11.4h0ZM1977.2,387.3c-.1.3-.3.6-.6.9-1.5,1.4-8.8.3-10.8.3h-29.6c-6.5,0-13-.8-19.5-.5-7.6.3-6.9-3-5.5-9.7,2-9.6,6.9-17.8,8.2-27.3,1.3-8.9,5.5-15.9,8.3-24.3,3.4-10.6,6.9-21.1,10.3-31.6.7-2.1,1.1-5.8,2.5-7.5,5.1-6.4,7.3.6,8.4,4.7,1.2,4.3,2.8,8.6,4.1,12.9,2.1,6.6,3.9,10.7,7.9,15.9,4.1,5.4,2.7,12.6,4.5,18.8,3.9,13.8,9.2,27,11.4,41.2.2,1.5,1.1,4.6.3,6.4h0Z"/><path class="st0" d="M2536.1,417.2c-9.8-1.9-22.1,0-32.1,0s-20-.6-29.8,0c-6.1.4-11.9.8-15.3,6.5-3.3,5.6-6.2,13.2-8.9,19.2-5.7,12.6-11.9,27.8-28.8,24.6-12.9-2.5-19.6-16.1-27.2-25-2.9-3.5-6-6.3-8.4-10.4-1.2-2.1-8.8-19.7-10.8-19.5,24.9-2.7,52.6-8.9,70.4-27.5,2.4-2.5,4-6.1,7-8,3.1-2,6.9-2.8,9.8-5.6,8.3-7.7,10.8-18.5,17.5-27.2,6.8-8.8,10.2-17.2,12.7-28.2,5.7-25,3.9-50.8,0-76-1.7-11.2-6.5-21.5-10.3-32.2-3.9-10.8-5.5-21.3-13-30.5-6.5-8-16.2-16-24.6-21.8-13.8-9.4-33.8-9.8-49.6-13.6-20-4.7-40.4-7.2-60.7-9.7-11.1-1.4-22.7-.3-33.9-.3s-27-.6-40.4,2.8c-18.3,4.6-45.5-5.7-57.1,13-7.8,12.6-4.9,29.5-4.9,43.3s-1.1,30.7,2.4,45.6c3.5,14.7,1.8,32.9-.9,47.7-4.3,23.8.3,47.6.3,71.6s1.6,63.7-1.5,95.2c-1.2,11.7-1.3,23.2-1.3,35s.9,22.8.9,34.2-2.4,15.9,1.3,22.2c4.4,7.5,13.9,5.4,21.3,5.4h43.8c7.1,0,14.2-.1,21.3,0,5.1,0,13.8,2.7,17.8-1.4,7.9-8.1,1.6-32,1.6-42.2v-36.4c7.4,11.4,15.4,22.5,24.3,32.8,7.7,8.9,13.7,19,21.4,27.8,7.7,8.7,13.9,13.6,25.2,16.1,17.9,4,37,12.1,55.3,9,24.4-4.2,46.4-10.6,67.2-24.3,16-10.5,28.3-31.9,35.3-49.1,4.8-11.6,24.6-58.5,2.5-63h-.1ZM2343.7,325.5h-3.5c-23.1,0-36-11-45.1-31.3-3-6.6-6.7-16.9-7.4-23.9-1.2-12.1,8-28.8,17.6-35.7,5.5-4,14.9-8.5,21.9-8,4.6.3,9.2,2.6,14.1,2.8,5.3.2,10.7-.3,16,.2,8.2.7,23.1,6.4,29,12,8.4,8,9.9,23.8,9.9,34.6,0,32.9-16.5,49.4-52.4,49.4h0Z"/><path class="st0" d="M2817.3,180.9c-1.1-12,8.2-41.5-10.5-44.2-9.8-1.4-20.1.4-29.8-1.5-8-1.5-14.5-2.6-22.9-2.4-21.6.5-43.2,1.5-64.8,1.5-22,0-44,2-66.1,1.9-10.3,0-21.3-2.3-31.5-1.4-8,.7-15.6,1.8-23.8,1.8s-16.5-1.6-20.5,1.1c-3.7,2.5-.8,10.3-.7,14,.2,8.2-1.6,16.4-1.3,24.5.3,6.5,1.3,12.4,1.3,18.8s-1.8,17.4,0,26c1.6,7.5,6.8,10.9,14,11.8,13.3,1.6,26.7,1.3,40,.9,5.2-.2,14.5-2.3,19.4-.6,1.3.5,2.3,1.3,3.2,2.4,7.7,10,2.8,24.6,1.6,35.6-1.5,14.5.5,29,.6,43.5.1,12.5,4,24.2,4.5,36.5.4,9.3,0,18.7,0,28s1.3,18.7,0,27.3c-.9,5.9-3.8,10.8-4,16.9-.4,9-3.3,18.7-2.8,27.6.5,7.3,3.3,13.5,3.3,21.1,0,20.6,0,41.2,0,61.8s-1.4,8.7.2,11c4.9,7.5,22.7,2.5,29.8,2,9.7-.7,19,3,28.6,2.5,4.4-.2,8.4-1.7,12.7-1.9,5.6-.3,11.3.1,16.9.1s16.6-.5,20.5-5.8c2.8-3.7,1.2-13.1,1.2-17.5,0-14.8,1.2-29.7,1.2-44.3,0-13.5-.2-27.1,0-40.6.2-10.1,1.1-20.2,1.2-30.3,0-7.8-2-14.6-2.6-22.1-1.5-19.8,1.1-41.3,1.8-61.2.6-14.8.1-29.6.1-44.4s-.4-21.5-1.1-32c-.5-7.8-.2-16.4,9.9-16.4s13.5.4,20.2.4c10.1,0,20.4-.5,30.4.4.2,0,.4,0,.6,0,5.3.4,11.8-.2,15.7-4.2,5-5,3.8-13.4,4.6-19.9.6-4.7,1.8-9.3,1.5-14-.3-5.2-2.6-10-3.1-15.1h0Z"/></svg>`;
+
+let logoDataURL = null, logoImg = null;
+
+function rasterToJpeg(img, aspect, maxW){
+  try{
+    const w=maxW, h=Math.round(maxW/aspect);
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    const ctx=cv.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h);
+    ctx.drawImage(img,0,0,w,h);
+    return cv.toDataURL('image/jpeg',0.92);
+  }catch(e){ return null; }
+}
+function placeLogo(){
+  const pv=$('pvLogo'); if(!pv) return;
+  if(logoDataURL){ pv.src=logoDataURL; pv.style.display='block';
+    pv.style.left=(LBL.logo.x*5)+'px'; pv.style.top=(LBL.logo.top*5)+'px'; pv.style.height=(LBL.logo.h*5)+'px';
+  } else pv.style.display='none';
+}
+function applyDefaultLogo(){
+  const im=new Image();
+  im.onload=()=>{ const jpeg=rasterToJpeg(im, DEFAULT_ASPECT, 1200); if(!jpeg) return;
+    logoDataURL=jpeg; const j=new Image(); j.onload=()=>{ logoImg=j; placeLogo(); refresh(); }; j.src=jpeg; };
+  im.onerror=()=> refresh();
+  im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(DEFAULT_LOGO_SVG);
+}
+
+/* ============================================================
+   2. ZPL generation — the whole label is rendered to a bitmap
+      (browser draws the text, so åäö & all characters are exact;
+      output matches the on-screen preview & PDF 1:1).
+   ============================================================ */
+function fontCss(px, bold){ return `${bold?'bold ':''}${Math.round(px)}px Arial,"Helvetica Neue",Helvetica,sans-serif`; }
+function wrapCanvas(ctx, text, maxW, maxLines){
+  const words=(''+text).split(/\s+/).filter(Boolean), lines=[]; let cur='';
+  for(const w of words){ const t=cur?cur+' '+w:w;
+    if(ctx.measureText(t).width<=maxW||!cur){ cur=t; } else { lines.push(cur); cur=w; } }
+  if(cur) lines.push(cur);
+  if(lines.length>maxLines) lines[maxLines-1]=lines.slice(maxLines-1).join(' ');
+  return lines.slice(0,maxLines);
+}
+/* Draw the full 100×50 mm label to a canvas at the given DPI */
+function renderLabelCanvas(d, dpi){
+  const dpmm=dpi/25.4, mm=v=>v*dpmm;
+  const W=Math.round(mm(100)), H=Math.round(mm(50));
+  const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#000'; ctx.textBaseline='top';
+  if(logoImg){
+    const lh=mm(LBL.logo.h), lw=lh*(logoImg.naturalWidth/logoImg.naturalHeight);
+    ctx.drawImage(logoImg, mm(LBL.logo.x), mm(LBL.logo.top), lw, lh);
+  }
+  for(const key of ORDER){
+    const f=LBL.fields[key], wpx=mm(f.w);
+    if(f.cap!=null){ ctx.font=fontCss(mm(LBL.capH),false);
+      ctx.fillText(CAPS[key], mm(f.x), mm(f.cap)); }
+    if(f.lines>1){
+      let em=mm(f.h); ctx.font=fontCss(em,true);
+      wrapCanvas(ctx, d[key], wpx, f.lines).forEach((ln,i)=>
+        ctx.fillText(ln, mm(f.x), mm(f.val + i*(f.step||f.h*1.15))));
+    } else {
+      let em=mm(f.h); ctx.font=fontCss(em,true);
+      if(f.fit){ while(em>mm(3.2) && ctx.measureText(''+d[key]).width>wpx){ em-=mm(0.25); ctx.font=fontCss(em,true); } }
+      ctx.fillText(''+d[key], mm(f.x), mm(f.val));
+    }
+  }
+  return cv;
+}
+/* Pack a canvas to a 1-bit ZPL ^GF graphic */
+function canvasToGF(cv){
+  const W=cv.width, H=cv.height, px=cv.getContext('2d').getImageData(0,0,W,H).data;
+  const bpr=Math.ceil(W/8); let hex='';
+  for(let y=0;y<H;y++){
+    for(let b=0;b<bpr;b++){
+      let byte=0;
+      for(let bit=0;bit<8;bit++){
+        const x=b*8+bit; let dark=0;
+        if(x<W){ const i=(y*W+x)*4;
+          const lum=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];
+          dark=(px[i+3]>128 && lum<128)?1:0; }
+        byte=(byte<<1)|dark;
+      }
+      hex+=byte.toString(16).padStart(2,'0');
+    }
+  }
+  const total=bpr*H;
+  return `^GFA,${total},${total},${bpr},${hex}`;
+}
+function buildZPL(d,dpi){
+  const dpmm=dpi/25.4, mm=v=>Math.round(v*dpmm);
+  return ['^XA',`^PW${mm(100)}`,`^LL${mm(50)}`,'^LH0,0',
+    '^FO0,0'+canvasToGF(renderLabelCanvas(d,dpi))+'^FS',
+    `^PQ${d.copies||1}`,'^XZ'].join('\n');
+}
+
+/* ============================================================
+   2b. Minimal PDF generator — exact 100×50 mm, vector text +
+       embedded logo (JPEG). No libraries, fully offline.
+   ============================================================ */
+function buildPDF(d){
+  const K=2.834645669, W=100*K, H=50*K, PTMM=0.352777;
+  const enc = s => { const a=[]; for(let i=0;i<s.length;i++){ const v=s.charCodeAt(i); a.push(v>255?63:v);} return a; };
+  const escp = s => String(s).replace(/[\\()]/g,m=>'\\'+m);
+  let c='';
+  const text=(font,pt,xmm,topMm,str)=>{ if(str===''||str==null) return;
+    const bl=topMm + pt*0.72*PTMM;                       // baseline from top
+    c += `BT /${font} ${pt} Tf ${(xmm*K).toFixed(2)} ${((50-bl)*K).toFixed(2)} Td (${escp(str)}) Tj ET\n`; };
+
+  const hasLogo = !!(logoDataURL && logoImg);
+  let imgBytes=[], iw=0, ih=0;
+  if(hasLogo){
+    const bin=atob(logoDataURL.split(',')[1]); imgBytes=new Array(bin.length);
+    for(let i=0;i<bin.length;i++) imgBytes[i]=bin.charCodeAt(i);
+    iw=logoImg.naturalWidth; ih=logoImg.naturalHeight;
+    const lh=LBL.logo.h, lw=lh*(iw/ih);
+    c += `q ${(lw*K).toFixed(2)} 0 0 ${(lh*K).toFixed(2)} ${(LBL.logo.x*K).toFixed(2)} ${((50-(LBL.logo.top+lh))*K).toFixed(2)} cm /Im0 Do Q\n`;
+  }
+  const ptOf = h => h/0.3528;                        // em-size mm -> pt
+  for(const key of ORDER){
+    const f=LBL.fields[key];
+    if(f.cap!=null) text('F1', ptOf(LBL.capH), f.x, f.cap, CAPS[key]);
+    if(f.lines>1){
+      wrapLines(d[key], f.w, f.h, f.lines).forEach((ln,i)=> text('F2', ptOf(f.h), f.x, f.val + i*(f.step||f.h*1.15), ln));
+    } else {
+      const h=f.fit?fitMM(d[key],f.w,f.h):f.h;
+      text('F2', ptOf(h), f.x, f.val, String(d[key]||''));
+    }
+  }
+
+  const xobj = hasLogo ? ' /XObject << /Im0 7 0 R >>' : '';
+  const objs=[
+    {d:'<< /Type /Catalog /Pages 2 0 R >>'},
+    {d:'<< /Type /Pages /Kids [3 0 R] /Count 1 >>'},
+    {d:`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W.toFixed(2)} ${H.toFixed(2)}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >>${xobj} >> /Contents 6 0 R >>`},
+    {d:'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>'},
+    {d:'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>'},
+    {d:`<< /Length ${enc(c).length} >>`, stream:enc(c)}
+  ];
+  if(hasLogo) objs.push({d:`<< /Type /XObject /Subtype /Image /Width ${iw} /Height ${ih} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBytes.length} >>`, stream:imgBytes});
+
+  let bytes=[]; const push=s=>{ const e=enc(s); for(let i=0;i<e.length;i++) bytes.push(e[i]); };
+  const pushB=a=>{ for(let i=0;i<a.length;i++) bytes.push(a[i]); };
+  push('%PDF-1.4\n'); const off=[];
+  objs.forEach((o,idx)=>{ const n=idx+1; off[n]=bytes.length;
+    push(`${n} 0 obj\n${o.d}\n`);
+    if(o.stream){ push('stream\n'); pushB(o.stream); push('\nendstream\n'); }
+    push('endobj\n'); });
+  const N=objs.length, xref=bytes.length;
+  push(`xref\n0 ${N+1}\n0000000000 65535 f \n`);
+  for(let i=1;i<=N;i++) push(String(off[i]).padStart(10,'0')+' 00000 n \n');
+  push(`trailer\n<< /Size ${N+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+  return new Blob([new Uint8Array(bytes)],{type:'application/pdf'});
+}
+
+/* ============================================================
+   3. Form -> data, preview
+   ============================================================ */
+function gather(){
+  return {
+    kund:    $('kund').value.trim(),
+    order:   $('order').value.trim(),
+    content: $('content').value.trim(),
+    antal:   $('antal').value.trim(),
+    copies:  Math.max(1, parseInt($('copies').value||'1',10)),
+    dpi:     parseInt($('dpi').value,10)
+  };
+}
+function refresh(){
+  const d=gather(), lbl=$('label'), S=5;
+  lbl.querySelectorAll('.cap,.val').forEach(n=>n.remove());
+  const add=(cls,x,top,extra,txt)=>{ const el=document.createElement('div'); el.className=cls;
+    el.style.cssText=`left:${x*S}px;top:${top*S}px;`+extra; el.textContent=txt; lbl.appendChild(el); };
+  for(const key of ORDER){
+    const f=LBL.fields[key];
+    if(f.cap!=null) add('cap',f.x,f.cap,`width:${f.w*S}px`,CAPS[key]);
+    if(f.lines>1){
+      add('val',f.x,f.val,`width:${f.w*S}px;font-size:${f.h*S}px;line-height:1.05;display:-webkit-box;-webkit-line-clamp:${f.lines};-webkit-box-orient:vertical;overflow:hidden`,d[key]);
+    } else {
+      const h=f.fit?fitMM(d[key],f.w,f.h):f.h;
+      add('val',f.x,f.val,`width:${f.w*S}px;font-size:${h*S}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis`,d[key]);
+    }
+  }
+}
+['kund','order','content','antal','copies','dpi'].forEach(id=>{
+  $(id).addEventListener('input', ()=>{ $(id).classList.remove('invalid'); refresh(); });
+  $(id).addEventListener('change', refresh);
+});
+/* Generera ZPL-vyn först när man fäller ut den (bitmap-generering är tung) */
+const zplDetails=$('zplOut').closest('details');
+if(zplDetails) zplDetails.addEventListener('toggle', ()=>{ if(zplDetails.open){
+  const d=gather(); $('zplOut').textContent = buildZPL(d,d.dpi); } });
+
+/* ============================================================
+   4. Zebra Browser Print transport
+   ============================================================ */
+const BP='https://localhost:9101/';
+let selectedDevice=null;
+function setStatus(state,text){ $('status').className=state; $('statusText').textContent=text; }
+async function discoverPrinters(){
+  try{
+    const r=await fetch(BP+'available'); const data=await r.json();
+    const list=data.printer||[]; const sel=$('device'); sel.innerHTML='';
+    if(list.length){
+      list.forEach((p,i)=>{ const o=document.createElement('option');
+        o.value=i; o.textContent=p.name||p.uid||('Skrivare '+i); sel.appendChild(o); });
+      selectedDevice=list[0]; sel.onchange=()=> selectedDevice=list[parseInt(sel.value,10)];
+      setStatus('ok','Browser Print redo · '+list.length+' skrivare');
+    }else{ sel.innerHTML='<option>Ingen skrivare hittad</option>'; setStatus('err','Browser Print igång, ingen skrivare'); }
+  }catch(e){
+    $('device').innerHTML='<option>Browser Print ej igång</option>';
+    setStatus('err','Browser Print hittades ej — använd Ladda ner');
+  }
+}
+async function sendToPrinter(zpl){
+  if(!selectedDevice) throw new Error('no-device');
+  await fetch(BP+'write',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device:selectedDevice,data:zpl})});
+}
+
+/* ============================================================
+   5. Utskrift / nedladdning / historik
+   ============================================================ */
+const HKEY='label_history';
+function loadHist(){ try{return JSON.parse(localStorage.getItem(HKEY))||[]}catch{return[]} }
+function saveHist(h){ localStorage.setItem(HKEY, JSON.stringify(h.slice(0,20))); }
+function addHist(d){
+  const h=loadHist();
+  h.unshift({t:new Date().toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}),
+    kund:d.kund, order:d.order, content:d.content, antal:d.antal, copies:d.copies, dpi:d.dpi});
+  saveHist(h); renderHist();
+}
+function fillFromRow(r){
+  $('kund').value=r.kund||''; $('order').value=r.order||'';
+  $('content').value=r.content||''; $('antal').value=r.antal||''; $('copies').value=r.copies||1;
+  if(r.dpi)$('dpi').value=r.dpi;
+  ['kund','order'].forEach(id=>$(id).classList.remove('invalid'));
+  refresh();
+}
+function renderHist(){
+  const h=loadHist(), b=$('histBody');
+  if(!h.length){ b.innerHTML='<tr><td colspan="6" class="empty">Inga utskrifter än.</td></tr>'; return; }
+  b.innerHTML='';
+  h.forEach(r=>{
+    const tr=document.createElement('tr');
+    ['t','kund','order','content','antal'].forEach(k=>{ const cell=document.createElement('td'); cell.textContent=r[k]||''; tr.appendChild(cell); });
+    const td=document.createElement('td'); td.style.whiteSpace='nowrap';
+    const load=document.createElement('button'); load.className='reprint'; load.textContent='Ladda';
+    load.title='Fyll i fälten med den här etiketten'; load.onclick=()=>{ fillFromRow(r); $('kund').focus(); };
+    const re=document.createElement('button'); re.className='reprint'; re.textContent='Skriv ut'; re.style.marginLeft='6px';
+    re.onclick=()=>{ fillFromRow(r); doPrint(); };
+    td.appendChild(load); td.appendChild(re); tr.appendChild(td); b.appendChild(tr);
+  });
+}
+function saveBlob(blob,name){ const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
+function downloadPDF(){ const d=gather(); saveBlob(buildPDF(d),`etikett_${d.order||'label'}.pdf`); }
+function validate(){
+  let ok=true, first=null;
+  for(const id of ['kund','order']){ const el=$(id);
+    if(!el.value.trim()){ el.classList.add('invalid'); if(!first) first=el; ok=false; }
+    else el.classList.remove('invalid'); }
+  if(!ok){ setStatus('err','Fyll i Kund och Ordernummer'); if(first) first.focus(); }
+  return ok;
+}
+async function doPrint(){
+  if(!validate()) return;
+  const d=gather(), zpl=buildZPL(d,d.dpi), btn=$('printBtn'), orig=btn.textContent;
+  btn.disabled=true; btn.textContent='Skriver ut…';
+  try{ await sendToPrinter(zpl); addHist(d); setStatus('ok','Skickad till skrivare ✓');
+       $('kund').focus(); $('kund').select(); setTimeout(discoverPrinters,1500); }
+  catch(e){ setStatus('err','Kunde inte skriva ut — laddar ner PDF'); addHist(d); downloadPDF(); }
+  finally{ btn.disabled=false; btn.textContent=orig; }
+}
+$('lblForm').addEventListener('submit', e=>{ e.preventDefault(); doPrint(); });
+$('pdfBtn').onclick=downloadPDF;
+const bumpCopies=delta=>{ const i=$('copies'); i.value=Math.max(1,(parseInt(i.value||'1',10)+delta)); };
+$('copyMinus').onclick=()=>bumpCopies(-1); $('copyPlus').onclick=()=>bumpCopies(1);
+$('clearHist').onclick=()=>{ localStorage.removeItem(HKEY); renderHist(); };
+
+/* init */
+refresh();
+applyDefaultLogo();
+renderHist(); discoverPrinters();
+$('kund').focus(); $('kund').select();
+</script>
+</body>
+</html>
