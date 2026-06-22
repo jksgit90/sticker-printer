@@ -447,7 +447,7 @@ async function discoverPrinters(){
     }else{ sel.innerHTML='<option>Ingen skrivare hittad</option>'; setStatus('err','Browser Print igång, ingen skrivare'); }
   }catch(e){
     $('device').innerHTML='<option>Browser Print ej igång</option>';
-    setStatus('err','Browser Print hittades ej — använd Ladda ner');
+    setStatus('err','Browser Print hittades ej — <a href="https://localhost:9101" target="_blank" style="color:inherit;text-decoration:underline">acceptera certifikat</a> eller använd Ladda ner');
   }
 }
 async function sendToPrinter(zpl){
