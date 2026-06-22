@@ -434,7 +434,7 @@ if(zplDetails) zplDetails.addEventListener('toggle', ()=>{ if(zplDetails.open){
    ============================================================ */
 const BP='https://localhost:9101/';
 let selectedDevice=null;
-function setStatus(state,text){ $('status').className=state; $('statusText').textContent=text; }
+function setStatus(state,text){ $('status').className=state; $('statusText').innerHTML=text; }
 async function discoverPrinters(){
   try{
     const r=await fetch(BP+'available'); const data=await r.json();
