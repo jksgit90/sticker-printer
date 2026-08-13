@@ -166,6 +166,7 @@
           </select></label>
         <label class="s"><span>Skrivare (Browser Print)</span>
           <select id="device"><option>— söker —</option></select></label>
+        <button type="button" id="reconnectBtn" class="ghost" style="margin-top:6px">Sök om skrivare</button>
         <details class="adv2">
           <summary>Visa genererad ZPL</summary>
           <pre class="zpl" id="zplOut"></pre>
@@ -435,26 +436,49 @@ if(zplDetails) zplDetails.addEventListener('toggle', ()=>{ if(zplDetails.open){
 const BP='https://localhost:9101/';
 let selectedDevice=null;
 function setStatus(state,text){ $('status').className=state; $('statusText').innerHTML=text; }
+function fetchTimeout(url,opts,ms){
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),ms);
+  return fetch(url,{...opts,signal:ctrl.signal}).finally(()=>clearTimeout(t));
+}
+let discoverInFlight=null;
 async function discoverPrinters(){
-  try{
-    const r=await fetch(BP+'available'); const data=await r.json();
-    const list=data.printer||[]; const sel=$('device'); sel.innerHTML='';
-    if(list.length){
-      list.forEach((p,i)=>{ const o=document.createElement('option');
-        o.value=i; o.textContent=p.name||p.uid||('Skrivare '+i); sel.appendChild(o); });
-      selectedDevice=list[0]; sel.onchange=()=> selectedDevice=list[parseInt(sel.value,10)];
-      setStatus('ok','Browser Print redo · '+list.length+' skrivare');
-    }else{ sel.innerHTML='<option>Ingen skrivare hittad</option>'; setStatus('err','Browser Print igång, ingen skrivare'); }
-  }catch(e){
-    $('device').innerHTML='<option>Browser Print ej igång</option>';
-    setStatus('err','Browser Print hittades ej — <a href="https://localhost:9101" target="_blank" style="color:inherit;text-decoration:underline">acceptera certifikat</a> eller använd Ladda ner');
-  }
+  /* Skydda mot överlappande anrop (periodisk koll + manuell "Sök om" samtidigt) */
+  if(discoverInFlight) return discoverInFlight;
+  discoverInFlight=(async()=>{
+    try{
+      const r=await fetchTimeout(BP+'available',{},4000); const data=await r.json();
+      const list=data.printer||[]; const sel=$('device');
+      const prevUid=selectedDevice&&selectedDevice.uid;
+      sel.innerHTML='';
+      if(list.length){
+        list.forEach((p,i)=>{ const o=document.createElement('option');
+          o.value=i; o.textContent=p.name||p.uid||('Skrivare '+i); sel.appendChild(o); });
+        /* Behåll tidigare vald skrivare om den fortfarande finns, annars ta första */
+        let idx=0;
+        if(prevUid){ const found=list.findIndex(p=>p.uid===prevUid); if(found>=0) idx=found; }
+        sel.value=idx; selectedDevice=list[idx];
+        sel.onchange=()=> selectedDevice=list[parseInt(sel.value,10)];
+        setStatus('ok','Browser Print redo · '+list.length+' skrivare');
+      }else{ selectedDevice=null; sel.innerHTML='<option>Ingen skrivare hittad</option>'; setStatus('err','Browser Print igång, ingen skrivare'); }
+    }catch(e){
+      selectedDevice=null;
+      $('device').innerHTML='<option>Browser Print ej igång</option>';
+      setStatus('err','Browser Print hittades ej — <a href="https://localhost:9101" target="_blank" style="color:inherit;text-decoration:underline">acceptera certifikat</a> eller använd Ladda ner');
+    }finally{ discoverInFlight=null; }
+  })();
+  return discoverInFlight;
 }
 async function sendToPrinter(zpl){
   if(!selectedDevice) throw new Error('no-device');
-  await fetch(BP+'write',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({device:selectedDevice,data:zpl})});
+  const r=await fetchTimeout(BP+'write',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device:selectedDevice,data:zpl})},6000);
+  if(!r.ok) throw new Error('write-failed');
 }
+/* Periodisk koll så att status alltid speglar verkligheten — upptäcker om
+   Browser Print kraschat eller skrivaren tappat USB-anslutningen utan att
+   operatören behöver starta om Chrome/datorn. */
+setInterval(discoverPrinters, 20000);
+$('reconnectBtn').onclick=()=>{ setStatus('','Söker skrivare…'); discoverPrinters(); };
 
 /* ============================================================
    5. Utskrift / nedladdning / historik
@@ -506,8 +530,18 @@ async function doPrint(){
   if(!validate()) return;
   const d=gather(), zpl=buildZPL(d,d.dpi), btn=$('printBtn'), orig=btn.textContent;
   btn.disabled=true; btn.textContent='Skriver ut…';
-  try{ await sendToPrinter(zpl); addHist(d); setStatus('ok','Skickad till skrivare ✓');
-       $('kund').focus(); $('kund').select(); setTimeout(discoverPrinters,1500); }
+  try{
+    try{ await sendToPrinter(zpl); }
+    catch(e){
+      /* Skrivarens "handle" kan bli inaktuell om Browser Print startats om eller
+         USB-anslutningen tappats/återupprättats — sök om och försök en gång till
+         innan vi ger upp till PDF-nedladdning. */
+      btn.textContent='Söker om skrivare…'; await discoverPrinters();
+      btn.textContent='Skriver ut…'; await sendToPrinter(zpl);
+    }
+    addHist(d); setStatus('ok','Skickad till skrivare ✓');
+    $('kund').focus(); $('kund').select(); setTimeout(discoverPrinters,1500);
+  }
   catch(e){ setStatus('err','Kunde inte skriva ut — laddar ner PDF'); addHist(d); downloadPDF(); }
   finally{ btn.disabled=false; btn.textContent=orig; }
 }
